@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, redirect, url_for, flash, abort
 from functools import wraps
 from flask_bootstrap import Bootstrap
@@ -11,21 +12,25 @@ from forms import CreatePostForm, RegistrationForm, Loginform, CommentForm
 from flask_gravatar import Gravatar
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
+app.config['SECRET_KEY'] = os.environ.get('FLASK_KEY')
 ckeditor = CKEditor(app)
 Bootstrap(app)
+# postgres://jayeshblog_user:Deq7KyAiWrKVMeo40t8g1PJ3xk6ltR8L@dpg-ci45undiuie031g94ua0-a.oregon-postgres.render.com/jayeshblog
 
 ##CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
+if os.environ.get('LOCAL'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///blog.db'
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-#LOGIN SETUP
+# LOGIN SETUP
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-
-#CREATTING A FLASK IMAGE FOR USER IN THE COMMENT
+# CREATTING A FLASK IMAGE FOR USER IN THE COMMENT
 gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, use_ssl=False,
                     base_url=None)
 
@@ -35,7 +40,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-#CREATING A DECORATOR FUNCITON
+# CREATING A DECORATOR FUNCITON
 def admin_only(func):
     @wraps(func)
     def decorated_function(*args, **kwargs):
@@ -43,6 +48,7 @@ def admin_only(func):
             return func(*args, **kwargs)
         else:
             return abort(403)
+
     return decorated_function
 
 
@@ -223,4 +229,3 @@ if __name__ == "__main__":
 # # Create the database file if it doesn't exist - also used to create / modify tables
 # if not os.path.isfile(DB_URL):
 #     db.create_all()
-
